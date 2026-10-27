@@ -1,23 +1,43 @@
 # predict
 
-A Node.js HTTP API for predicting weekly sales, with no external dependencies.
+A Node.js HTTP API and a React interface for predicting weekly sales.
 Requires Node.js 18 or newer.
 
 ## Run
 
 ```sh
+npm install
 npm start
 ```
 
-The server listens on port 3000 by default. Set `PORT` to use a different port.
+Open `http://localhost:3000`. The start command builds the React frontend and
+starts the Node.js server. Set `PORT` to use a different port.
+
+## Interface
+
+- Choose Naive, SES, or Holt in the settings panel. Alpha applies to SES and Holt;
+  beta applies to Holt only. Unused inputs are disabled.
+- Select individual weeks from `data.json`, or use Select all and Clear.
+- Click Submit to send the selected observations and relevant parameters to the
+  selected API. The right panel displays the 10 predicted weeks and their values.
+
+Observations are sent in date order. The dataset contains weekly sales from the
+original exercise. Prediction values are displayed to two decimal places; the API
+response retains the original numeric precision.
+
+For frontend development with automatic reload, run these commands in separate
+terminals:
+
+```sh
+npm run dev:server
+npm run dev:client
+```
+
+Open the Vite URL printed in the second terminal. Its API proxy uses port 3000.
 
 ## API
 
-`GET /` returns HTTP 200 with a placeholder JSON response:
-
-```json
-{"message":"Placeholder response"}
-```
+`GET /` serves the React interface. The prediction endpoints below return JSON.
 
 ### POST /naive
 
@@ -114,6 +134,19 @@ The first predicted point is
 `{ "timestamp": "2019-04-08T00:00:00.000Z", "value": 127.5 }`.
 
 ## Forecasting algorithms
+
+- **Naive** repeats the last observed value. It provides a simple baseline, but
+  depends entirely on the latest week and does not account for a trend.
+- **SES** smooths past observations, with `alpha` controlling the weight of new
+  data. It reduces short-term fluctuations but produces a flat future forecast.
+- **Holt** smooths both the sales level and its trend, using `alpha` and `beta`.
+  It can project increasing or decreasing demand over the next 10 weeks.
+
+Holt is the main approach for this exercise because it accounts for changing
+demand while remaining small enough to implement and explain directly in
+JavaScript. This is a design choice, not a demonstrated accuracy advantage:
+the methods have not yet been compared on held-out weeks. Holt does not model
+seasonality, and extending a linear trend can produce unrealistic predictions.
 
 Each algorithm is available as a standalone function:
 

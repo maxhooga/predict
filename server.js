@@ -1,10 +1,19 @@
 import { createServer } from 'node:http';
+import { readFile } from 'node:fs/promises';
+import { extname, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { predictNaive } from './algorithms/naive.js';
 import { predictSES } from './algorithms/ses.js';
 import { predictHolt } from './algorithms/holt.js';
 
 const port = process.env.PORT || 3000;
 const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
+const clientDirectory = fileURLToPath(new URL('./client/dist/', import.meta.url));
+const contentTypes = {
+  '.html': 'text/html; charset=utf-8',
+  '.js': 'text/javascript; charset=utf-8',
+  '.css': 'text/css; charset=utf-8',
+};
 
 function readNaiveData(body) {
   return body.data.map((point) => point.value);
@@ -114,9 +123,19 @@ const server = createServer(async (request, response) => {
     return;
   }
 
-  if (request.method === 'GET' && request.url === '/') {
-    response.writeHead(200);
-    response.end(JSON.stringify({ message: 'Placeholder response' }));
+  if (request.method === 'GET' && (request.url === '/' || request.url.startsWith('/assets/'))) {
+    try {
+      const pathname = new URL(request.url, 'http://localhost').pathname;
+      const filePath = resolve(clientDirectory, pathname === '/' ? 'index.html' : pathname.slice(1));
+      if (!filePath.startsWith(clientDirectory)) throw new Error('File not found');
+
+      const file = await readFile(filePath);
+      response.writeHead(200, { 'Content-Type': contentTypes[extname(filePath)] || 'application/octet-stream' });
+      response.end(file);
+    } catch {
+      response.writeHead(404);
+      response.end(JSON.stringify({ message: 'Frontend file not found. Run npm run build first.' }));
+    }
     return;
   }
 
