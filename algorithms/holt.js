@@ -15,8 +15,8 @@ export function predictHolt(weeklySales, weeksAhead = 10, alpha = 0.5, beta = 0.
   let trend = weeklySales[1] - weeklySales[0];
 
   for (let week = 1; week < weeklySales.length; week += 1) {
-    const previousLevel = level;
-    const previousTrend = trend;
+    const previousLevel = level; // Smoothed price estimate before the current update.
+    const previousTrend = trend; // Estimated price change per week before the current update.
 
     level =
       alpha * weeklySales[week] +
